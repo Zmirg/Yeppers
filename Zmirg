@@ -1,0 +1,126 @@
+pip install pygame 
+import pygame
+import sys
+import random
+
+# Initialize pygame
+pygame.init()
+
+# Screen dimensions
+SCREEN_WIDTH = 400
+SCREEN_HEIGHT = 600
+SCREEN = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+pygame.display.set_caption("Flappy Bird")
+
+# Colors
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+BLUE = (135, 206, 250)
+GREEN = (0, 255, 0)
+
+# Game variables
+GRAVITY = 0.5
+FLAP_STRENGTH = -10
+PIPE_SPEED = 5
+PIPE_GAP = 150
+BIRD_WIDTH, BIRD_HEIGHT = 40, 30
+
+# Load bird image (optional: replace with your own image)
+BIRD = pygame.Surface((BIRD_WIDTH, BIRD_HEIGHT))
+BIRD.fill((255, 223, 0))
+
+# Clock
+clock = pygame.time.Clock()
+FPS = 60
+
+def draw_text(surface, text, size, x, y, color=BLACK):
+    font = pygame.font.Font(pygame.font.get_default_font(), size)
+    text_surface = font.render(text, True, color)
+    text_rect = text_surface.get_rect(center=(x, y))
+    surface.blit(text_surface, text_rect)
+
+def main():
+    # Bird variables
+    bird_x = 100
+    bird_y = SCREEN_HEIGHT // 2
+    bird_velocity = 0
+
+    # Pipe variables
+    pipe_width = 70
+    pipes = []
+    for i in range(2):  # Start with two pipes
+        pipe_x = SCREEN_WIDTH + i * (SCREEN_WIDTH // 2)
+        pipe_height = random.randint(100, SCREEN_HEIGHT - PIPE_GAP - 100)
+        pipes.append([pipe_x, pipe_height])
+
+    score = 0
+    running = True
+
+    while running:
+        SCREEN.fill(BLUE)
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_SPACE:
+                    bird_velocity = FLAP_STRENGTH
+
+        # Update bird position
+        bird_velocity += GRAVITY
+        bird_y += bird_velocity
+
+        # Draw the bird
+        SCREEN.blit(BIRD, (bird_x, bird_y))
+
+        # Update pipes
+        for pipe in pipes:
+            pipe[0] -= PIPE_SPEED
+
+            # Draw pipes
+            pygame.draw.rect(SCREEN, GREEN, (pipe[0], 0, pipe_width, pipe[1]))
+            pygame.draw.rect(SCREEN, GREEN, (pipe[0], pipe[1] + PIPE_GAP, pipe_width, SCREEN_HEIGHT))
+
+            # Reset pipe when it goes off screen
+            if pipe[0] + pipe_width < 0:
+                pipe[0] = SCREEN_WIDTH
+                pipe[1] = random.randint(100, SCREEN_HEIGHT - PIPE_GAP - 100)
+                score += 1
+
+            # Collision detection
+            if (bird_x + BIRD_WIDTH > pipe[0] and bird_x < pipe[0] + pipe_width) and \
+               (bird_y < pipe[1] or bird_y + BIRD_HEIGHT > pipe[1] + PIPE_GAP):
+                running = False
+
+        # Check if bird hits the ground or flies out of bounds
+        if bird_y + BIRD_HEIGHT > SCREEN_HEIGHT or bird_y < 0:
+            running = False
+
+        # Draw score
+        draw_text(SCREEN, f"Score: {score}", 30, SCREEN_WIDTH // 2, 50)
+
+        pygame.display.flip()
+        clock.tick(FPS)
+
+    # End screen
+    SCREEN.fill(WHITE)
+    draw_text(SCREEN, "Game Over!", 50, SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50)
+    draw_text(SCREEN, f"Final Score: {score}", 30, SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 10)
+    draw_text(SCREEN, "Press R to Restart or Q to Quit", 20, SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + 50)
+    pygame.display.flip()
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r:
+                    main()
+                if event.key == pygame.K_q:
+                    pygame.quit()
+                    sys.exit()
+
+if __name__ == "__main__":
+    main()
